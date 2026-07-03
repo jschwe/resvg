@@ -338,7 +338,7 @@ pub fn apply(
     source: &mut tiny_skia::Pixmap,
 ) {
     let result = apply_inner(filter, ts, source);
-    let result = result.and_then(|image| apply_to_canvas(image, source));
+    let result = result.and_then(|(image, region)| apply_to_canvas(image, region, source));
 
     // Clear on error.
     if result.is_err() {
@@ -358,7 +358,7 @@ fn apply_inner(
     filter: &usvg::filter::Filter,
     ts: usvg::Transform,
     source: &mut tiny_skia::Pixmap,
-) -> Result<Image, Error> {
+) -> Result<(Image, IntRect), Error> {
     let canvas_rect =
         IntRect::from_xywh(0, 0, source.width(), source.height()).ok_or(Error::InvalidRegion)?;
 
@@ -516,10 +516,40 @@ fn apply_inner(
     }
 
     if let Some(res) = results.pop() {
-        Ok(res.image)
+        Ok((res.image, region))
     } else {
         Err(Error::NoResults)
     }
+}
+
+/// Copies the filter region out of the source image.
+///
+/// Filter primitives require all of their input images to have the region size,
+/// but `source` can have a different one. For example, when multiple filters
+/// with different regions are applied to the same group, `source` has the size
+/// of their united bounding box.
+fn source_to_region(
+    source: &tiny_skia::Pixmap,
+    region: IntRect,
+) -> Result<tiny_skia::Pixmap, Error> {
+    if region.x() == 0
+        && region.y() == 0
+        && region.width() == source.width()
+        && region.height() == source.height()
+    {
+        return Ok(source.clone());
+    }
+
+    let mut image = tiny_skia::Pixmap::try_create(region.width(), region.height())?;
+    image.draw_pixmap(
+        -region.x(),
+        -region.y(),
+        source.as_ref(),
+        &tiny_skia::PixmapPaint::default(),
+        tiny_skia::Transform::identity(),
+        None,
+    );
+    Ok(image)
 }
 
 fn get_input(
@@ -530,7 +560,7 @@ fn get_input(
 ) -> Result<Image, Error> {
     match input {
         usvg::filter::Input::SourceGraphic => {
-            let image = source.clone();
+            let image = source_to_region(source, region)?;
 
             Ok(Image {
                 image: Rc::new(image),
@@ -539,7 +569,7 @@ fn get_input(
             })
         }
         usvg::filter::Input::SourceAlpha => {
-            let mut image = source.clone();
+            let mut image = source_to_region(source, region)?;
             // Set RGB to black. Keep alpha as is.
             for p in image.data_mut().as_rgba_mut() {
                 p.r = 0;
@@ -1099,13 +1129,20 @@ fn transform_light_source(
     source
 }
 
-fn apply_to_canvas(input: Image, pixmap: &mut tiny_skia::Pixmap) -> Result<(), Error> {
+fn apply_to_canvas(
+    input: Image,
+    region: IntRect,
+    pixmap: &mut tiny_skia::Pixmap,
+) -> Result<(), Error> {
     let input = input.into_color_space(usvg::filter::ColorInterpolation::SRGB)?;
 
     pixmap.fill(tiny_skia::Color::TRANSPARENT);
+    // The final image is region-sized and positioned at the region origin,
+    // which is not necessarily the canvas origin, e.g. when multiple filters
+    // with different regions are applied to the same group.
     pixmap.draw_pixmap(
-        0,
-        0,
+        region.x(),
+        region.y(),
         input.as_ref().as_ref(),
         &tiny_skia::PixmapPaint::default(),
         tiny_skia::Transform::identity(),

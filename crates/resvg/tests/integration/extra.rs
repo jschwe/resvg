@@ -106,3 +106,8 @@ fn filter_region_larger_than_max_bbox_displacement_map() {
 fn filter_region_outside_i32_range() {
     assert_eq!(render_extra("extra/filter-region-outside-i32-range"), 0);
 }
+
+#[test]
+fn filter_chain_with_different_regions() {
+    assert_eq!(render_extra("extra/filter-chain-with-different-regions"), 0);
+}
