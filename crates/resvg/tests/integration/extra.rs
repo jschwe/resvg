@@ -111,3 +111,8 @@ fn filter_region_outside_i32_range() {
 fn filter_chain_with_different_regions() {
     assert_eq!(render_extra("extra/filter-chain-with-different-regions"), 0);
 }
+
+#[test]
+fn turbulence_with_huge_num_octaves() {
+    assert_eq!(render_extra("extra/turbulence-with-huge-num-octaves"), 0);
+}

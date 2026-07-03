@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">
+    <title>feTurbulence with a huge numOctaves and base frequency</title>
+    <desc>Both cases push the noise lattice coordinates outside the i32 range. Previously overflowed.</desc>
+
+    <!-- 66 octaves double the noise coordinates way past the i32 range. -->
+    <filter id="filter1" filterUnits="userSpaceOnUse" x="0" y="0" width="50" height="100">
+        <feTurbulence baseFrequency="0.71" numOctaves="66"/>
+    </filter>
+    <rect width="50" height="100" filter="url(#filter1)"/>
+
+    <!-- A huge base frequency overflows the lattice coordinates within a single octave. -->
+    <filter id="filter2" filterUnits="userSpaceOnUse" x="50" y="0" width="50" height="100">
+        <feTurbulence baseFrequency="1000000000"/>
+    </filter>
+    <rect x="50" width="50" height="100" filter="url(#filter2)"/>
+</svg>
