@@ -10,6 +10,9 @@ This changelog also contains important changes in dependencies.
 
 This release has an MSRV of 1.87.0 for `usvg` and `resvg` and the C API.
 
+### Fixed
+- Panic when a filter region has coordinates outside the `i32` range.
+
 ## [0.47.0] 2026-02-05
 
 This release has an MSRV of 1.87.0 for `usvg` and `resvg` and the C API.
