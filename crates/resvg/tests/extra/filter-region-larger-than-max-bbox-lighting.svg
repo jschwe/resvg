@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">
+    <title>Filter region larger than the internal max_bbox (feDiffuseLighting)</title>
+    <desc>The filter region exceeds the internal 5x-canvas limit. Previously panicked.</desc>
+
+    <filter id="filter1" filterUnits="userSpaceOnUse" x="0" y="0" width="5000" height="100">
+        <feDiffuseLighting surfaceScale="2" diffuseConstant="1" lighting-color="white">
+            <fePointLight x="50" y="50" z="20"/>
+        </feDiffuseLighting>
+    </filter>
+    <rect x="20" y="20" width="60" height="60" fill="seagreen" filter="url(#filter1)"/>
+</svg>

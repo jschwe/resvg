@@ -80,3 +80,34 @@ fn render_node_filter_on_empty_group() {
 fn render_node_filter_with_transform_on_shape() {
     assert_eq!(render_node("extra/filter-with-transform-on-shape", "g1"), 0);
 }
+
+#[test]
+fn filter_region_larger_than_max_bbox() {
+    assert_eq!(render_extra("extra/filter-region-larger-than-max-bbox"), 0);
+}
+
+#[test]
+fn filter_region_larger_than_max_bbox_lighting() {
+    assert_eq!(
+        render_extra("extra/filter-region-larger-than-max-bbox-lighting"),
+        0
+    );
+}
+
+#[test]
+fn filter_region_larger_than_max_bbox_displacement_map() {
+    assert_eq!(
+        render_extra("extra/filter-region-larger-than-max-bbox-displacement-map"),
+        0
+    );
+}
+
+#[test]
+fn filter_region_outside_i32_range() {
+    assert_eq!(render_extra("extra/filter-region-outside-i32-range"), 0);
+}
+
+#[test]
+fn filter_chain_with_different_regions() {
+    assert_eq!(render_extra("extra/filter-chain-with-different-regions"), 0);
+}

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">
+    <title>Filter region larger than the internal max_bbox (feDisplacementMap)</title>
+    <desc>The filter region exceeds the internal 5x-canvas limit. Previously panicked.</desc>
+
+    <filter id="filter1" filterUnits="userSpaceOnUse" x="0" y="0" width="5000" height="100">
+        <feDisplacementMap in="SourceGraphic" in2="SourceGraphic" scale="10" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <rect x="20" y="20" width="60" height="60" fill="seagreen" filter="url(#filter1)"/>
+</svg>

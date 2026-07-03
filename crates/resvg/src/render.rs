@@ -73,11 +73,15 @@ fn render_group(
     } else {
         // The bounding box for groups with filters is special and should not be expanded by 2px,
         // because it's already acting as a clipping region.
-        let bbox = bbox.to_int_rect();
+        //
         // Make sure our filter region is not bigger than 4x the canvas size.
         // This is required mainly to prevent huge filter regions that would tank the performance.
         // It should not affect the final result in any way.
-        crate::geom::fit_to_rect(bbox, ctx.max_bbox)?
+        //
+        // The clamping must happen before the integer conversion, because filter regions
+        // can have coordinates outside the `i32` range, on which
+        // `NonZeroRect::to_int_rect` panics.
+        crate::geom::clamped_int_rect(bbox, ctx.max_bbox)?
     };
 
     // Make sure our layer is not bigger than 4x the canvas size.
