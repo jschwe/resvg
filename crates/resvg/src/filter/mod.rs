@@ -359,11 +359,20 @@ fn apply_inner(
     ts: usvg::Transform,
     source: &mut tiny_skia::Pixmap,
 ) -> Result<Image, Error> {
+    let canvas_rect =
+        IntRect::from_xywh(0, 0, source.width(), source.height()).ok_or(Error::InvalidRegion)?;
+
     let region = filter
         .rect()
         .transform(ts)
-        .map(|r| r.to_int_rect())
+        .and_then(|r| crate::geom::clamped_int_rect(r, canvas_rect))
         .ok_or(Error::InvalidRegion)?;
+
+    // Unlike the filter region, a primitive subregion offset affects primitive placement
+    // (feImage, feTile), so clamp it to a range that cannot cause `i32` overflows
+    // in the code below rather than to the canvas.
+    let subregion_bounds =
+        IntRect::from_ltrb(-(1 << 28), -(1 << 28), 1 << 28, 1 << 28).ok_or(Error::InvalidRegion)?;
 
     let mut results: Vec<FilterResult> = Vec::new();
 
@@ -371,7 +380,7 @@ fn apply_inner(
         let mut subregion = primitive
             .rect()
             .transform(ts)
-            .map(|r| r.to_int_rect())
+            .and_then(|r| crate::geom::clamped_int_rect(r, subregion_bounds))
             .ok_or(Error::InvalidRegion)?;
 
         // `feOffset` inherits its region from the input.
@@ -457,7 +466,7 @@ fn apply_inner(
             } else {
                 subregion.translate(-region.x(), -region.y())
             }
-            .unwrap();
+            .ok_or(Error::InvalidRegion)?;
 
             let color_space = result.color_space;
 

@@ -11,6 +11,8 @@ This changelog also contains important changes in dependencies.
 This release has an MSRV of 1.87.0 for `usvg` and `resvg` and the C API.
 
 ### Fixed
+- Panics (assertion failures in filter primitives) when the filter region is larger than
+  the internal canvas size limit. Filter regions are now clamped to the canvas.
 - Panic when a filter region has coordinates outside the `i32` range.
 
 ## [0.47.0] 2026-02-05

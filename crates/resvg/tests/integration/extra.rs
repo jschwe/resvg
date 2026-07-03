@@ -82,6 +82,27 @@ fn render_node_filter_with_transform_on_shape() {
 }
 
 #[test]
+fn filter_region_larger_than_max_bbox() {
+    assert_eq!(render_extra("extra/filter-region-larger-than-max-bbox"), 0);
+}
+
+#[test]
+fn filter_region_larger_than_max_bbox_lighting() {
+    assert_eq!(
+        render_extra("extra/filter-region-larger-than-max-bbox-lighting"),
+        0
+    );
+}
+
+#[test]
+fn filter_region_larger_than_max_bbox_displacement_map() {
+    assert_eq!(
+        render_extra("extra/filter-region-larger-than-max-bbox-displacement-map"),
+        0
+    );
+}
+
+#[test]
 fn filter_region_outside_i32_range() {
     assert_eq!(render_extra("extra/filter-region-outside-i32-range"), 0);
 }
