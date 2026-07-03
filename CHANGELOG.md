@@ -16,6 +16,9 @@ This release has an MSRV of 1.87.0 for `usvg` and `resvg` and the C API.
   applied to the same element. Filter regions are now clamped to the canvas and
   filter inputs are always region-sized.
 - Panic when a filter region has coordinates outside the `i32` range.
+- Integer overflows in `feTurbulence` on large `numOctaves` or `baseFrequency` values.
+  The effective octave count is now limited to 30, which is enough for any
+  visible contribution.
 
 ## [0.47.0] 2026-02-05
 

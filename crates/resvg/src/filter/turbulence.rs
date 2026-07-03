@@ -16,6 +16,12 @@ const B_LEN: usize = B_SIZE + B_SIZE + 2;
 const BM: i32 = 0xff;
 const PERLIN_N: i32 = 0x1000;
 
+// Each octave doubles the noise coordinates and halves the amplitude.
+// Beyond 30 octaves the contribution is below 2^-30, which is invisible
+// even after the multiplication by 255, while the doubled coordinates
+// would quickly exceed the `i32` range in `noise2` causing overflows.
+const MAX_OCTAVES: u32 = 30;
+
 #[derive(Clone, Copy)]
 struct StitchInfo {
     width: i32, // How much to subtract to wrap for stitching.
@@ -43,6 +49,8 @@ pub fn apply(
     fractal_noise: bool,
     dest: ImageRefMut,
 ) {
+    let num_octaves = num_octaves.min(MAX_OCTAVES);
+
     let (lattice_selector, gradient) = init(seed);
     let width = dest.width;
     let height = dest.height;
@@ -211,10 +219,13 @@ fn turbulence(
         if let Some(ref mut stitch) = stitch {
             // Update stitch values. Subtracting PerlinN before the multiplication and
             // adding it afterward simplifies to subtracting it once.
-            stitch.width *= 2;
-            stitch.wrap_x = 2 * stitch.wrap_x - PERLIN_N;
-            stitch.height *= 2;
-            stitch.wrap_y = 2 * stitch.wrap_y - PERLIN_N;
+            //
+            // The wrapping arithmetic prevents overflows on large base frequencies
+            // and octave counts. The resulting noise is still deterministic.
+            stitch.width = stitch.width.wrapping_mul(2);
+            stitch.wrap_x = stitch.wrap_x.wrapping_mul(2).wrapping_sub(PERLIN_N);
+            stitch.height = stitch.height.wrapping_mul(2);
+            stitch.wrap_y = stitch.wrap_y.wrapping_mul(2).wrapping_sub(PERLIN_N);
         }
     }
 
@@ -229,33 +240,38 @@ fn noise2(
     gradient: &[Vec<Vec<f64>>],
     stitch_info: Option<StitchInfo>,
 ) -> f64 {
+    // Values too large for an i32 saturate at `i32::MAX` during the cast, therefore
+    // the wrapping arithmetic below to prevent overflows. This can only happen with
+    // huge base frequencies or coordinates, where the (still deterministic) noise
+    // is meaningless anyway. The lattice indices are masked with `BM` in the end,
+    // so any i32 value is acceptable.
     let t = x + PERLIN_N as f64;
     let mut bx0 = t as i32;
-    let mut bx1 = bx0 + 1;
+    let mut bx1 = bx0.wrapping_add(1);
     let rx0 = t - t as i64 as f64;
     let rx1 = rx0 - 1.0;
     let t = y + PERLIN_N as f64;
     let mut by0 = t as i32;
-    let mut by1 = by0 + 1;
+    let mut by1 = by0.wrapping_add(1);
     let ry0 = t - t as i64 as f64;
     let ry1 = ry0 - 1.0;
 
     // If stitching, adjust lattice points accordingly.
     if let Some(info) = stitch_info {
         if bx0 >= info.wrap_x {
-            bx0 -= info.width;
+            bx0 = bx0.wrapping_sub(info.width);
         }
 
         if bx1 >= info.wrap_x {
-            bx1 -= info.width;
+            bx1 = bx1.wrapping_sub(info.width);
         }
 
         if by0 >= info.wrap_y {
-            by0 -= info.height;
+            by0 = by0.wrapping_sub(info.height);
         }
 
         if by1 >= info.wrap_y {
-            by1 -= info.height;
+            by1 = by1.wrapping_sub(info.height);
         }
     }
 
